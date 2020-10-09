@@ -1,32 +1,33 @@
 #include <iostream>
 #include <fstream>
 #include <cmath>
+#include <sstream>
+#include <chrono>
 
-using namespace std;
+class timer{ // for recording time
+	std::chrono::high_resolution_clock::time_point start, end;
+	std::chrono::duration<double> length;
+	public:
+    // Konstruktorius, kuris paleidžia laikmatį.
+	timer() { start =  std::chrono::high_resolution_clock::now(); }
+	// Funkcija, apskaičiuojanti praėjusį laiką.
+	void stop() {
+		end =  std::chrono::high_resolution_clock::now();
+		length = std::chrono::duration_cast<std::chrono::duration<double>>(end-start);
+	}
+	// Funkcija, išvedanti praėjusį laiką.
+	double duration() { return length.count(); }
+};
+
+using namespace std; // I don't use any other library anyway, don't judge me!
 
 void midHash(string& chr32, long long int x[]){
     // seperate into 8 ints
-    cout << chr32 << endl;
-    /// v1
-    /*for(int i=0; i<8; i++)
-        for(int j=0; j<4; j++)
-            x[i]+=chr32[i*4+j]*pow(127, j);
-*/
-    ///v2
+
     for(int i=0; i<8; i++) {
         for(int j=i; j<32+i; j+=4)
             x[i]+=chr32[j%32]+chr32[(j+1)%32]*127+chr32[(j+2)%32]*pow(127, 2)+chr32[(j+3)%32]*pow(127, 3);
-
-        /*int j = k;
-        while(j<32+k) {
-            cout << x[i] << "+" << chr32[i*4+(j%32)] << "=";
-            x[i]+=chr32[i*4+(j%32)]*pow(127, (j-k)%4);
-            cout << x[i] << endl;
-            j++;
-        }
-        k++;
-        cout << endl;*/
-    }
+    } // I should probably comment about this...
 
     // multiply by different primes
     x[0]*=97; x[1]*=71; x[2]*=67; x[3]*=37;
@@ -37,7 +38,6 @@ void midHash(string& chr32, long long int x[]){
     x[4]*=x[4]; x[5]*=x[5]; x[6]*=x[6]; x[7]*=x[7];
 
     //get middle 8*1.6 (13) chars
-
     string sx[8];
     for(int i=0; i<8; i++) {
         sx[i]=to_string(x[i]); // convert to string
@@ -50,35 +50,105 @@ void midHash(string& chr32, long long int x[]){
     chr32="";
 }
 
-void HorribleHash(string in) {
-    ifstream fd(in);
-    fd >> noskipws;
+void BenoHash() {
+    cout << "Input type?\n0 - text, 1 - file\n";
+    int inputType;
+    cin >> inputType;
+    if(inputType==1) {
+        cout << "Hash the entire file or hash word-by-word?\n0 - entire file, 1 - word-by-word\n";
+        cin >> inputType;
+        inputType++;
+    }
 
-    char inputLetter;
-    string chr32 = "";
+    string chr32 = ""; // global, needs to be here
     long long int x[8];
+    char inputLetter;
     for(int i=0; i<8; i++) x[i]=0;
-    while(fd >> inputLetter) {
-        // to 32 letters
-        chr32 += inputLetter;
-        if(chr32.length()==31) {
-            cout << chr32 << " - str\n";
-            midHash(chr32, x);
+
+    if(inputType==1) {
+        string in;
+        //cout << "Hash one line at a time or "
+        cout << "Write the input file's name\n";
+        cin >> in;
+        timer t;
+        ifstream fd(in);
+        fd >> noskipws;
+
+        while(fd >> inputLetter) {
+            // to 32 letters
+            chr32 += inputLetter;
+            if(chr32.length()==32) {
+                midHash(chr32, x);
+            }
+        }
+        t.stop();
+        cout << "Time taken:" << t.duration() << "s\n";
+    }
+    else if(inputType==1) { // through cmd
+        // cmd version (further fd -> ss)
+        string input;
+        cout << "Write the phrase you want to hash (use only one line)\n";
+        getline(cin, input);
+        getline(cin, input);
+        stringstream ss(input);
+        ss >> noskipws;
+
+        while(ss >> inputLetter) {
+            // to 32 letters
+            chr32 += inputLetter;
+            if(chr32.length()==32) {
+                midHash(chr32, x);
+            }
         }
     }
+    else if(inputType==2){
+        string line, in;
+        cout << "Write the input file's name\n";
+        cin >> in;
+        ifstream fd(in);
+
+        FILE* f;
+        f = fopen("hash.txt", "w");
+
+        int i = 0;
+        while(fd >> line){
+            stringstream ss(line);
+            while(ss >> inputLetter) {
+                // to 32 letters
+                cout << inputLetter << endl;
+                chr32 += inputLetter;
+                if(chr32.length()==32) {
+                    midHash(chr32, x);
+                }
+            }
+            if(chr32.length() != 0) while(chr32.length() < 32){
+                chr32+='0';
+            }
+            midHash(chr32, x);
+            for(int i=0; i<8; i++) { printf("%08x", x[i]); fprintf(f, "%08x", x[i]); }
+            printf("\n"); fprintf(f, "\n");
+            if(i%2==1) { printf("\n"); fprintf(f, "\n"); }
+            i++;
+
+        }
+        fclose(f);
+        return;
+    }
     // if input doesn't have 32, fill with 0s
-    while(chr32.length() < 32){
+    if(chr32.length() != 0) while(chr32.length() < 32){
         chr32+='0';
     }
     midHash(chr32, x);
 
-    for(int i=0; i<8; i++) printf("%08x ", x[i]);
+    FILE* f;
+    f = fopen("hash.txt", "w");
+    for(int i=0; i<8; i++) { printf("%08x", x[i]); fprintf(f, "%08x", x[i]); }
+    fclose(f);
     cout << endl;
 }
 
 int main()
 {
-    HorribleHash("input0.txt");
-    HorribleHash("input1.txt"); // YAAAAAAAAAAAASSSSSSSSSSS!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    BenoHash();
     return 0;
 }
