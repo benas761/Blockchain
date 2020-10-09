@@ -24,5 +24,13 @@ Analizė:
 	- Tuščio failo išvestis: "6679ecdd5821cc46d9a4ad1cc231bc386845f94c64da6de39fe7449a6e909435".
 2. Išvestys visos buvo 64 simbolių, nesikartojo ir įvedus tą pačią įvesti antrą kartą išliko tos pačios.
 3. Konstitucija.txt buvo eilutėmis "suhashinta" per 0.032099s.
+	- Norint pamatyti skirtum1 tarp SHA-256 ir mano funkcijos buvo sukurtas 1GB teksto failas pilnas atsitiktinių simbolių. Į 7-zip integruota SHA-256 hash funkcija failą apdorojo per ~4.8s, kol mano funkcijai prireikė 232.132s. Ji buvo beveik 50 kartų lėtesnė.
 4. Sugeneruotos poros kaip buvo nurodyta.
 5. Testavimui parašyta programa pairTest.cpp. Aptikta 0 vienodų porų.
+6. Testuota su pairTest.cpp. Skaičiuota kiek vienodų simbolių arba bitų buvo kiekviename žodyje palyginus su kitu:
+	- Atsitiktinių porų hex panašumas: vidutinis: 66.999931%, minimalus: 58.007812%, maksimalus: 76.171875%.
+	Panašių porų bit panašumas: vidutinis: 66.996513%, minimalus: 57.226562%, maksimalus: 77.148438%.
+	- Atsitiktinių porų panašumas: vidutinis: 6.243469%, minimalus: 0.000000%, maksimalus: 21.875000%.
+	Panašių porų hex panašumas: vidutinis - 6.24433%, minimalus - 0%, maksimalus - 21.875%.
+	Kaip supratau, hex panašumui testuoti reikia lyginti kiekvieną hash'o raidę. Jei ne, tada aš ne taip padariau.
+7. Išvados: Kol hash'uojamas failas yra mažas, ši funkcija neblogai realizuoja avelanche efektą ir vengia kolizijos. Tačiau, palyginus su egzistuojančiomis hash funkcijomis ji yra apgailėtina laiko atžvilgiu.

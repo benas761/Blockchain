@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <time.h>
+#include <cmath>
 
 using namespace std;
 
@@ -18,7 +19,7 @@ int main()
         if(i!=500) fr1 << temp;
         else fr1 << temp+1; // vienu simboliu toliau ascii bibliotekoje
     }
-    for(int i=0; i<10000000; i++) { fr2 << (char)((rand()%(127-33))+33); }
+    for(int i=0; i<pow(1024, 3); i++) { fr2 << (char)((rand()%(127-33))+33); }
     for(int i=0; i<100000; i++) {
         if(i<25000)  {
             for(int j=0; j<10; j++) {
