@@ -1,6 +1,7 @@
 # Hash-function
 
-Maišos funkcijos paaiškinimas:
+## v0.1
+#### Maišos funkcijos paaiškinimas:
 
 1. Perskaito 32 simbolius
 	- Jeigu gale nesusidaro 32 simboliai, pridedama tiek 0, kiek reikia norint pasiekti 32 simbolius.
@@ -13,7 +14,7 @@ Maišos funkcijos paaiškinimas:
 4. Perskaitomi tolimesni 32 simboliai ir einama į pirmą žingsnį kol baigiasi failas.
 5. Gauti skaičiai iš eilės rašomi į failą hash.txt ir rašymo metu verčiami į šešioliktainę sistemą, apsiribojant 8 simboliais.
 
-Analizė:
+#### Analizė:
 
 1. Įvairių įvesčių testavimas:
 	- Įvestis: "a". Išvestis: "afc0e2358d4248c30bce5bafc07d405da99a38a260fa262ea7cde7e16e115f47".
