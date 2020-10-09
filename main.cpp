@@ -55,7 +55,7 @@ void BenoHash() {
     int inputType;
     cin >> inputType;
     if(inputType==1) {
-        cout << "Hash the entire file or hash word-by-word?\n0 - entire file, 1 - word-by-word\n";
+        cout << "Hash the entire file (0), word by word (1) or line by line (2)?\n";
         cin >> inputType;
         inputType++;
     }
@@ -67,7 +67,6 @@ void BenoHash() {
 
     if(inputType==1) {
         string in;
-        //cout << "Hash one line at a time or "
         cout << "Write the input file's name\n";
         cin >> in;
         timer t;
@@ -84,7 +83,7 @@ void BenoHash() {
         t.stop();
         cout << "Time taken:" << t.duration() << "s\n";
     }
-    else if(inputType==1) { // through cmd
+    else if(inputType==0) { // through cmd
         // cmd version (further fd -> ss)
         string input;
         cout << "Write the phrase you want to hash (use only one line)\n";
@@ -115,7 +114,6 @@ void BenoHash() {
             stringstream ss(line);
             while(ss >> inputLetter) {
                 // to 32 letters
-                cout << inputLetter << endl;
                 chr32 += inputLetter;
                 if(chr32.length()==32) {
                     midHash(chr32, x);
@@ -125,15 +123,51 @@ void BenoHash() {
                 chr32+='0';
             }
             midHash(chr32, x);
-            for(int i=0; i<8; i++) { printf("%08x", x[i]); fprintf(f, "%08x", x[i]); }
-            printf("\n"); fprintf(f, "\n");
-            if(i%2==1) { printf("\n"); fprintf(f, "\n"); }
+            for(int i=0; i<8; i++) { fprintf(f, "%08x", x[i]); }
+            fprintf(f, "\n");
+            if(i%2==1) { fprintf(f, "\n"); }
             i++;
 
         }
         fclose(f);
         return;
     }
+        else if(inputType==3){// Same as the last one, except for the while condition, because that's not a pain in the ass to read...
+        string line, in;
+        cout << "Write the input file's name\n";
+        cin >> in;
+        ifstream fd(in);
+
+        FILE* f;
+        f = fopen("hash.txt", "w");
+
+        int i = 0;
+        timer cnt;
+        while(getline(fd, line)){
+            stringstream ss(line);
+            while(ss >> inputLetter) {
+                // to 32 letters
+                chr32 += inputLetter;
+                if(chr32.length()==32) {
+                    midHash(chr32, x);
+                }
+            }
+            if(chr32.length() != 0) while(chr32.length() < 32){
+                chr32+='0';
+            }
+            midHash(chr32, x);
+            for(int i=0; i<8; i++) { fprintf(f, "%08x", x[i]); }
+            fprintf(f, "\n");
+            if(i%2==1) { fprintf(f, "\n"); }
+            i++;
+
+        }
+        cnt.stop();
+        cout << "Time taken: " << cnt.duration() << "s.\n";
+        fclose(f);
+        return;
+    }
+
     // if input doesn't have 32, fill with 0s
     if(chr32.length() != 0) while(chr32.length() < 32){
         chr32+='0';

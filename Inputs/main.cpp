@@ -1,10 +1,12 @@
 #include <iostream>
 #include <fstream>
+#include <time.h>
 
 using namespace std;
 
 int main()
 {
+    srand(time(0));
     ofstream fr0("0.txt"); // atsitiktinai generuoti 1000 simboliu
     ofstream fr1("1.txt"); // kaip 0, tik skiriasi 500-uoju simboliu
     ofstream fr2("2.txt"); // daug simboliu
@@ -16,7 +18,7 @@ int main()
         if(i!=500) fr1 << temp;
         else fr1 << temp+1; // vienu simboliu toliau ascii bibliotekoje
     }
-    for(int i=0; i<10240000; i++) { fr2 << (char)((rand()%(127-33))+33); }
+    for(int i=0; i<10000000; i++) { fr2 << (char)((rand()%(127-33))+33); }
     for(int i=0; i<100000; i++) {
         if(i<25000)  {
             for(int j=0; j<10; j++) {
