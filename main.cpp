@@ -2,6 +2,8 @@
 #include <fstream>
 #include <cmath>
 #include <sstream>
+#include <algorithm>
+#include <iomanip>
 #include <chrono>
 
 class timer{ // for recording time
@@ -46,8 +48,33 @@ void midHash(string& chr32, long long int x[]){
         sx[i].erase(13);
         x[i]=stoll(sx[i]);
     }
-
     chr32="";
+}
+
+string badHash(string in){
+    long long int x[8];
+    for(int i=0; i<8; i++) x[i]=0;
+
+    string t = in.substr(0, 32);
+    while(t.length()<32) t+="0";
+    midHash(t, x);
+
+    for(int i=32; i<in.length(); i+=32){
+        t = in.substr(i, 32);
+        while(t.length()<32) t+="0";
+        midHash(t, x);
+    }
+    string theHash;
+    stringstream ss;
+    ss<<setfill('0')<<hex;
+    for(int i=0; i<8; i++) {
+        ss<<setw(8)<<x[i];
+        string t(ss.str());
+        t = t.substr(t.length()-8, 8);
+        theHash+=t;
+        ss.str(string());
+    }
+    return theHash;
 }
 
 void BenoHash() {
@@ -183,6 +210,9 @@ void BenoHash() {
 
 int main()
 {
-    BenoHash();
+    cout << badHash("a") << endl;
+    cout << badHash("a") << endl;
+    cout << badHash("b") << endl;
+    cout << badHash("") << endl;
     return 0;
 }
