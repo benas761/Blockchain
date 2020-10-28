@@ -1,6 +1,4 @@
-# Hash-function
-
-## v0.1
+## v0.1 - Hash function
 #### Maišos funkcijos paaiškinimas:
 
 1. Perskaito 32 simbolius
