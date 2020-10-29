@@ -1,5 +1,7 @@
 #include "header.h"
 
+const int userNum=10, transNum=100;
+
 class user{
 public:
     std::string name, publicKey;
@@ -14,17 +16,25 @@ public:
 };
 
 class transaction{
+public:
     std::string hashID, inKey, outKey;
     int sum;
-public:
+
     bool isValid = true;
     transaction(std::string inPublicKey, std::string outPublicKey, int sum){
         inKey = inPublicKey;
         outKey = outPublicKey;
         this->sum = sum;
         std::string all = inPublicKey + outPublicKey + std::to_string(this->sum);
-        ///hashID = hash(all);
-        hashID = all; // bad!
+        hashID = badHash(all); /// bad! you stupid piece of shit, learn what public keys are already...
+    }
+    transaction() {}
+    operator=(transaction b) {
+        inKey = b.inKey;
+        outKey = b.outKey;
+        sum = b.sum;
+        std::string all = b.inKey + b.outKey + std::to_string(b.sum);
+        hashID = badHash(all);
     }
 };
 
@@ -38,32 +48,36 @@ public:
     block(std::string temp) {
 
     }
-private:
     std::string previousHash, merkelHash, nonce;
     int version, difficulty = 2; /// change timestamp type later
     std::vector<transaction> transactions;
     int timestamp = time(0);
 };
 
-void generateUsers(int n, user users[]) {
+void generateUsers(const int n, user users[]) {
     for(int i=0; i<n; i++) {
         int b = rand()%9900+100;
-        user t("name"+std::to_string(i), badHash("name"+std::to_string(i)+std::to_string(b)), b);
+        std::string name = "name"+std::to_string(i);
+        user t(name, badHash(name), b);
         users[i]=t;
     }
 }
 
-void genereateTransactions(int n) {
+void generateTransactions(const int n, transaction tr[], user users[]) {
     for(int i=0; i<n; i++) {
-
+        int a = rand()%userNum, b=rand()%userNum;
+        while(b==a && userNum>1) b = rand()%userNum; // to make sure they don't send money between the same user
+        transaction t(users[a].publicKey, users[b].publicKey, rand()%9990+10); // money go from 10 to 1000
+        tr[i] = t;
     }
 }
 
 int main()
 {
     block genesisBlock;
-    user users[10];
-    generateUsers(10, users);
-    for(int i=0; i<10; i++) std::cout << users[i].publicKey << std::endl;
+    user users[userNum];
+    transaction transactions[transNum];
+    generateUsers(userNum, users);
+    generateTransactions(transNum, transactions, users);
     return 0;
 }
