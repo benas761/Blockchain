@@ -1,6 +1,6 @@
 #include "header.h"
 
-const int maxBalance = 1000, maxTrans = 10, userNum=1000, transNum=10000, blockSize = 100; // blocksize<=transNum
+const int maxBalance = 1000000, maxTrans = 100, userNum=1000, transNum=10000, blockSize = 100; // blocksize<=transNum
 std::vector<block> blockchain;
 
 transaction::transaction(std::string inPublicKey, std::string outPublicKey, int sum){
@@ -21,7 +21,7 @@ transaction::operator=(transaction b) {
 
 void generateUsers(const int n, user users[]) {
     for(int i=0; i<n; i++) {
-        int b = rand()%(maxBalance-10)+10;
+        int b = rand()%(maxBalance-100)+100;
         std::string name = "name"+std::to_string(i);
         user t(name, badHash(name), b);
         users[i]=t;
@@ -33,7 +33,7 @@ std::vector<transaction> generateTransactions(const int n, user users[]) {
     for(int i=0; i<n; i++) {
         int a = rand()%userNum, b=rand()%userNum;
         while(b==a && userNum>1) b = rand()%userNum; // to make sure they don't send money between the same user
-        transaction t(users[a].publicKey, users[b].publicKey, rand()%(transNum-1)+1); // money go from 1 to 1000
+        transaction t(users[a].publicKey, users[b].publicKey, rand()%(transNum-1)+1); // money go from 1 to maxTrans
         t.userIn=users+a;
         t.userOut=users+b;
         tr.push_back(t);
@@ -62,10 +62,10 @@ std::string merkleRoot(std::vector<transaction> tr) {
 block makeBlock(std::vector<transaction> &transactions){
     block b;
     for(int i=0; i<blockSize/10; i++){
-        auto trLoc = transactions.begin() + rand()%(transNum-blockSize/10);
+        auto trLoc = transactions.begin() + rand()%(transactions.size()-blockSize/10);
         for(int j=0; j<blockSize/10; j++)
             b.transactions.push_back(*(trLoc+j));
-        transactions.erase(trLoc, trLoc+blockSize/10); // takes every 10 transactions, much faster to erase
+        transactions.erase(trLoc, trLoc+blockSize/10); /// takes every 10 transactions, much faster to erase, though still the biggest time waste of all
     }
     b.merkelHash = merkleRoot(b.transactions);
     return(b);
@@ -90,8 +90,6 @@ void mineBlock(std::vector<transaction> &tr, user users[]){
             blockchain.push_back(b);
             // execute transactions
             for(auto it = blockchain.back().transactions.begin(); it!=blockchain.back().transactions.end(); it++){
-
-    //std::cout << std::distance(blockchain.back().transactions.begin(), it) << std::endl;
                 std::string all = (*it).inKey + (*it).outKey + std::to_string((*it).sum);
                 if(badHash(all) == (*it).hashID){
                     // find both users - VERY SLOW!!!
@@ -121,7 +119,7 @@ void mineBlock(std::vector<transaction> &tr, user users[]){
 
 int main()
 {
-    //srand(time(NULL));
+    srand(time(NULL));
     block genesisBlock;
     blockchain.push_back(genesisBlock);
     user users[userNum];
@@ -129,15 +127,11 @@ int main()
     std::vector<transaction> transactions = generateTransactions(transNum, users);
     double sumsBefore[userNum];
     for(int i=0; i<userNum; i++) sumsBefore[i]=users[i].balance;
-    while(transactions.size()>=100) mineBlock(transactions, users);
+    while(transactions.size()>100) mineBlock(transactions, users);
+    //for(int i=0; i<transNum/blockSize; i++) mineBlock(transactions, users);
     std::cout << "Every 100th user's balance, before and after:\n";
     for(int i=0; i<userNum; i+=100) {
         std::cout << std::setw(6) << sumsBefore[i] << std::setw(6) << users[i].balance << std::endl;
     }
-    int c = 0;
-    for(int i=0; i<userNum; i++) if(sumsBefore[i]==users[i].balance) c++;
-    std::cout << "Repeated balances: " << c << std::endl;
-    std::cout << "Input anything to end.\n";
-    std::cin >> c;
     return 0;
 }

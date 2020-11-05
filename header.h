@@ -44,7 +44,7 @@ public:
         merkelHash=badHash("");
     }
     std::string previousHash, merkelHash;
-    int version = 0, difficulty = 0;
+    int version = 0, difficulty = 3;
     unsigned long long int nonce=0;
     std::vector<transaction> transactions;
     int timestamp = time(0);
