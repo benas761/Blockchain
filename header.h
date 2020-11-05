@@ -30,7 +30,8 @@ public:
 class transaction{
 public:
     std::string hashID, inKey, outKey;
-    int sum;
+    user *userIn, *userOut; // for a 30% faster insert, random memory problems may occur
+    double sum;
     bool isValid = true;
     transaction(std::string inPublicKey, std::string outPublicKey, int sum);
     operator=(transaction b);
@@ -43,7 +44,7 @@ public:
         merkelHash=badHash("");
     }
     std::string previousHash, merkelHash;
-    int version = 0, difficulty = 3;
+    int version = 0, difficulty = 0;
     unsigned long long int nonce=0;
     std::vector<transaction> transactions;
     int timestamp = time(0);

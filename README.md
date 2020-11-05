@@ -1,3 +1,15 @@
+## v0.2 - Blockų grandinė
+#### Trumpas veikimo aprašymas
+- Sudaro 1000 vartotojų su atsitiktiniais balansais sąskaitas.
+- Sudaro 10000 transakcijų tarp tų vartotojų. Vietoje vartotojų public raktų naudojamos rodyklės į jų struktūras programos pagreitinimui.
+- Sudaro bloką, kuris turi transakcijų sąrašą, praeito bloko hash'ą, noncą, versiją, laiką, kada buvo sukurtas, ir transakcijų sąrašo hash'ų merkelio medis (nors iš jo išeinantis viršutinis hash'as, tikriusiai teks vėliau pridėti funkciją saugoti visoms šakoms).
+- Pridedama bloką į grandinę programa patikrina ar jo transakcijos hashuojasi į tą pat, ką saugo, bei tikrina ar siuntėjas turi pakankamai pinigų įvykdyti transakciją.
+#### Problemos
+- Atsitiktinės atminties problemos.
+- Transakcijos priskiriamos tik pusei vartotojų.
+#### Paleidimo instrukcija
+Kadangi yra didelė tikimybė programai užlūžti dėl atminties problemos, reikia leisti .cbp failą ir per atsidariusią CodeBlocks programą kodą paleisti per debugger'į (raudona rodyklė). Tai leidžia išvengti atminties problemų (ir smarkiai pasunkina jų radimą).
+
 ## v0.1 - Hash function
 #### Maišos funkcijos paaiškinimas:
 
