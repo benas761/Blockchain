@@ -1,4 +1,5 @@
 ## v0.2 - Blockų grandinė
++0.1 balo už merkel hash little indian formato skirtumo pamatymą 11-06 paskaitoje.
 #### Trumpas veikimo aprašymas
 - Sudaro 1000 vartotojų su atsitiktiniais balansais sąskaitas.
 - Sudaro 10000 transakcijų tarp tų vartotojų. Vietoje vartotojų public raktų naudojamos rodyklės į jų struktūras programos pagreitinimui.
