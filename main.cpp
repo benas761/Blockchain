@@ -61,74 +61,95 @@ std::string merkleRoot(std::vector<transaction> tr) {
 
 block makeBlock(std::vector<transaction> &transactions){
     block b;
-    for(int i=0; i<blockSize/10; i++){
-        auto trLoc = transactions.begin() + rand()%(transactions.size()-blockSize/10);
-        for(int j=0; j<blockSize/10; j++)
-            b.transactions.push_back(*(trLoc+j));
-        transactions.erase(trLoc, trLoc+blockSize/10); /// takes every 10 transactions, much faster to erase, though still the biggest time waste of all
+    for(int i=0; i<blockSize; i++){
+        auto trLoc = transactions.begin() + rand()%(transactions.size()-1);
+        b.transactions.push_back(*trLoc);
+        b.transPtr.push_back(trLoc);
+        //transactions.erase(trLoc, trLoc+blockSize/10); /// takes every 10 transactions, much faster to erase, though still the biggest time waste of all
     }
     b.merkelHash = merkleRoot(b.transactions);
     return(b);
 }
 
-std::string blockToString(block b){
-    std::string x = std::to_string(b.difficulty)+b.merkelHash+std::to_string(b.nonce);
+std::string blockToString(block b, unsigned long long int nonce = -1){
+    if(nonce==-1) nonce=b.nonce;
+    std::string x = std::to_string(b.difficulty)+b.merkelHash+std::to_string(nonce);
     x += b.previousHash+std::to_string(b.timestamp)+std::to_string(b.version);
     return(x);
 }
 
-void mineBlock(std::vector<transaction> &tr, user users[]){
+block mineBlock(std::vector<transaction> &tr, user users[], bool &blockMined){
     block b = makeBlock(tr);
-    std::string comp, zeros; zeros.assign(b.difficulty, '0');
-    while(true){
-        std::string currHash = badHash(blockToString(b));
-        comp = currHash;
+    std::string zeros; zeros.assign(b.difficulty, '0');
+    for(int i = 0; !blockMined; i++){
+        //std::cout << currThread << std::endl;
+        std::string currHash = badHash(blockToString(b, i));
+        std::string comp = currHash;
         comp.resize(b.difficulty);
+        //std::cout << comp << " " << zeros << " " << i << std::endl;
         if(comp == zeros) {
-            // add the block to the chain
-            b.previousHash = badHash(blockToString(blockchain.back()));
-            blockchain.push_back(b);
-            // execute transactions
-            for(auto it = blockchain.back().transactions.begin(); it!=blockchain.back().transactions.end(); it++){
-                std::string all = (*it).inKey + (*it).outKey + std::to_string((*it).sum);
-                if(badHash(all) == (*it).hashID){
-                    // find both users - VERY SLOW!!!
-                    /*int user1 = -1, user2 = -1;
-                    for(int i = 0; user1 == -1 || user2 == -1 || i<userNum; i++){
-                        if(users[i].publicKey==(*it).inKey) user1 = i;
-                        else if(users[i].publicKey==(*it).outKey) user2 = i;
-                        if(i-1==userNum) std::cout << "problem.\n";
-                    }
-                    if(users[user1].balance>=(*it).sum){
-                        users[user1].balance -= (*it).sum;
-                        users[user2].balance += (*it).sum;
-                    }*/
-                    if((*it).userIn->balance>=(*it).sum){
-                        (*it).userIn->balance -= (*it).sum;
-                        (*it).userOut->balance += (*it).sum;
-                    }
-                    else (*it).isValid = false; //tr.push_back(*it); - instead of just putting it back to transaction list, it just invalidates it
-                }
-                else (*it).isValid = false;
-            }
-            break;
+            // set nonce
+            b.nonce = i;
+            return b;
         }
-        else b.nonce++;
     }
+}
+
+void addBlock(block b, std::vector<transaction> &transactions, user users[]) {
+    // add the block to the chain
+    b.previousHash = badHash(blockToString(blockchain.back()));
+    blockchain.push_back(b);
+    // execute transactions
+    int trDiff=0;
+    auto it = blockchain.back().transactions.begin();
+    for(int i=0; i<blockchain.back().transactions.size(); i++){
+        std::string all = (*it).inKey + (*it).outKey + std::to_string((*it).sum);
+        if(badHash(all) == (*it).hashID){
+            if((*it).userIn->balance>=(*it).sum){
+                (*it).userIn->balance -= (*it).sum;
+                (*it).userOut->balance += (*it).sum;
+            }
+            else (*it).isValid = false; //tr.push_back(*it); - instead of just putting it back to transaction list, it just invalidates it
+        }
+        else (*it).isValid = false;
+        std::iter_swap(blockchain.back().transPtr[i], transactions.end()-trDiff-1);
+        trDiff++;
+        it++;
+    }
+    transactions.erase(transactions.end()-trDiff, transactions.end());
 }
 
 int main()
 {
     srand(time(NULL));
-    block genesisBlock;
-    blockchain.push_back(genesisBlock);
+    blockchain.push_back(block());
     user users[userNum];
     generateUsers(userNum, users);
     std::vector<transaction> transactions = generateTransactions(transNum, users);
     double sumsBefore[userNum];
     for(int i=0; i<userNum; i++) sumsBefore[i]=users[i].balance;
-    while(transactions.size()>100) mineBlock(transactions, users);
-    //for(int i=0; i<transNum/blockSize; i++) mineBlock(transactions, users);
+
+    std::cout << "Thread Nonce Transactions_left\n";
+    while(transactions.size()>blockSize) {
+        // The block mining competition
+        bool blockMined = false;
+        const int threadNum = omp_get_max_threads();
+        block potentialBlocks[threadNum];
+        clock_t timestamp[threadNum]; for(int i=0; i<threadNum; i++) timestamp[i]=std::numeric_limits<clock_t>::max();
+        #pragma omp parallel
+        {
+            int currThread = omp_get_thread_num();
+            potentialBlocks[currThread] = mineBlock(transactions, users, blockMined);
+            if(!blockMined) {
+                timestamp[currThread] = clock();
+                blockMined = true;
+            }
+        }
+        int winnerIndex = std::distance(timestamp, std::min_element(timestamp, timestamp+threadNum));
+        addBlock(potentialBlocks[winnerIndex], transactions, users);
+        std::cout <<std::setw(6)<< winnerIndex <<" "<<std::setw(5)<< blockchain.back().nonce <<" "<< transactions.size() <<std::endl;
+    }
+
     std::cout << "Every 100th user's balance, before and after:\n";
     for(int i=0; i<userNum; i+=100) {
         std::cout << std::setw(6) << sumsBefore[i] << std::setw(6) << users[i].balance << std::endl;

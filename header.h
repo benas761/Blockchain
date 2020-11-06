@@ -10,6 +10,8 @@
 #include <iomanip>
 #include <chrono>
 #include <time.h>
+#include <omp.h>
+#include <limits>
 
 void midHash(std::string& chr32, long long int x[]);
 std::string badHash(std::string in);
@@ -47,6 +49,7 @@ public:
     int version = 0, difficulty = 3;
     unsigned long long int nonce=0;
     std::vector<transaction> transactions;
+    std::vector<std::vector<transaction>::iterator> transPtr;
     int timestamp = time(0);
 };
 
