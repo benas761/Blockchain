@@ -1,3 +1,22 @@
+## v0.3 - Blokų kasimo realizacija
+#### Trumpas veikimo aprašymas
+- Išrenka tiek potencialių kandidatų, kiek kompiuteris turi brandoulių (ang. threads, tai branduolių x2).
+- Kiekvienas kandidatas pasirenka 100 transakcijų, kuriomis bus užpildytas laimėjęs blokas.
+- Pradedamas kasimas:
+  - Kol nėra iškastas blokas, visi kandidatai bando rasti tinkama hash'ą iteruodami nonce kintamajį.
+  - Jei kas nors suranda tinkamo sudėtingumo bloką, kiti kandidatai nustoja kasti ir laimėtojui priskiriamas iškasimo laikas (jei kas nors iškasė tuo pačiu metu, bus išrenkamas branduolys, kuris pirmesnis pagal sąrašą).
+  - Blokas pridedamas į grandinę.
+  - Laimėtojas savo iškastas transakcijas padeda į transakcijų galą.
+  - Perkeltos transakcijos yra ištrinamos (tai smarkiai paspartina programos veikimą lyginant su v0.2 versija)
+## v0.2 - Blockų grandinė
++0.1 balo už merkel hash little indian formato skirtumo pamatymą 11-06 paskaitoje.
+#### Trumpas veikimo aprašymas
+- Sudaro 1000 vartotojų su atsitiktiniais balansais sąskaitas.
+- Sudaro 10000 transakcijų tarp tų vartotojų. Vietoje vartotojų public raktų naudojamos rodyklės į jų struktūras programos pagreitinimui.
+- Sudaro bloką, kuris turi transakcijų sąrašą, praeito bloko hash'ą, noncą, versiją, laiką, kada buvo sukurtas, ir transakcijų sąrašo hash'ų merkelio medis (nors iš jo išeinantis viršutinis hash'as, tikriusiai teks vėliau pridėti funkciją saugoti visoms šakoms).
+- Pridedama bloką į grandinę programa patikrina ar jo transakcijos hashuojasi į tą pat, ką saugo, bei tikrina ar siuntėjas turi pakankamai pinigų įvykdyti transakciją.
+#### Paleidimo instrukcija
+Atidaryti .cbp failą ir per CodeBlocks paleisti programą.
 ## v0.1 - Hash function
 #### Maišos funkcijos paaiškinimas:
 

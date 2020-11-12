@@ -1,218 +1,158 @@
-#include <iostream>
-#include <fstream>
-#include <cmath>
-#include <sstream>
-#include <algorithm>
-#include <iomanip>
-#include <chrono>
+#include "header.h"
 
-class timer{ // for recording time
-	std::chrono::high_resolution_clock::time_point start, end;
-	std::chrono::duration<double> length;
-	public:
-    // Konstruktorius, kuris paleidžia laikmatį.
-	timer() { start =  std::chrono::high_resolution_clock::now(); }
-	// Funkcija, apskaičiuojanti praėjusį laiką.
-	void stop() {
-		end =  std::chrono::high_resolution_clock::now();
-		length = std::chrono::duration_cast<std::chrono::duration<double>>(end-start);
-	}
-	// Funkcija, išvedanti praėjusį laiką.
-	double duration() { return length.count(); }
-};
+const int maxBalance = 1000000, maxTrans = 100, userNum=1000, transNum=10000, blockSize = 100; // blocksize<=transNum
+std::vector<block> blockchain;
 
-using namespace std; // I don't use any other library anyway, don't judge me!
-
-void midHash(string& chr32, long long int x[]){
-    // seperate into 8 ints
-
-    for(int i=0; i<8; i++) {
-        for(int j=i; j<32+i; j+=4)
-            x[i]+=chr32[j%32]+chr32[(j+1)%32]*127+chr32[(j+2)%32]*pow(127, 2)+chr32[(j+3)%32]*pow(127, 3);
-    } // I should probably comment about this...
-
-    // multiply by different primes
-    x[0]*=97; x[1]*=71; x[2]*=67; x[3]*=37;
-    x[4]*=19; x[5]*=31; x[6]*=59; x[7]*=23;
-
-    //square the parts
-    x[0]*=x[0]; x[1]*=x[1]; x[2]*=x[2]; x[3]*=x[3];
-    x[4]*=x[4]; x[5]*=x[5]; x[6]*=x[6]; x[7]*=x[7];
-
-    //get middle 8*1.6 (13) chars
-    string sx[8];
-    for(int i=0; i<8; i++) {
-        sx[i]=to_string(x[i]); // convert to string
-        if(sx[i].length()<13) sx[i].insert(0, 13-sx[i].length(), '0');// makes sure there IS a 13 character long middle
-        sx[i].erase(0, (sx[i].length()-13)/2); // get the last characters coming after the 13 in the middle
-        sx[i].erase(13);
-        x[i]=stoll(sx[i]);
-    }
-    chr32="";
+transaction::transaction(std::string inPublicKey, std::string outPublicKey, int sum){
+    inKey = inPublicKey;
+    outKey = outPublicKey;
+    this->sum = sum;
+    std::string all = inPublicKey + outPublicKey + std::to_string(this->sum);
+    hashID = badHash(all);
 }
 
-string badHash(string in){
-    long long int x[8];
-    for(int i=0; i<8; i++) x[i]=0;
-
-    string t = in.substr(0, 32);
-    while(t.length()<32) t+="0";
-    midHash(t, x);
-
-    for(int i=32; i<in.length(); i+=32){
-        t = in.substr(i, 32);
-        while(t.length()<32) t+="0";
-        midHash(t, x);
-    }
-    string theHash;
-    stringstream ss;
-    ss<<setfill('0')<<hex;
-    for(int i=0; i<8; i++) {
-        ss<<setw(8)<<x[i];
-        string t(ss.str());
-        t = t.substr(t.length()-8, 8);
-        theHash+=t;
-        ss.str(string());
-    }
-    return theHash;
+transaction::operator=(transaction b) {
+    inKey = b.inKey;
+    outKey = b.outKey;
+    sum = b.sum;
+    std::string all = b.inKey + b.outKey + std::to_string(b.sum);
+    hashID = badHash(all);
 }
 
-void BenoHash() {
-    cout << "Input type?\n0 - text, 1 - file\n";
-    int inputType;
-    cin >> inputType;
-    if(inputType==1) {
-        cout << "Hash the entire file (0), word by word (1) or line by line (2)?\n";
-        cin >> inputType;
-        inputType++;
+void generateUsers(const int n, user users[]) {
+    for(int i=0; i<n; i++) {
+        int b = rand()%(maxBalance-100)+100;
+        std::string name = "name"+std::to_string(i);
+        user t(name, badHash(name), b);
+        users[i]=t;
     }
+}
 
-    string chr32 = ""; // global, needs to be here
-    long long int x[8];
-    char inputLetter;
-    for(int i=0; i<8; i++) x[i]=0;
+std::vector<transaction> generateTransactions(const int n, user users[]) {
+    std::vector<transaction> tr;
+    for(int i=0; i<n; i++) {
+        int a = rand()%userNum, b=rand()%userNum;
+        while(b==a && userNum>1) b = rand()%userNum; // to make sure they don't send money between the same user
+        transaction t(users[a].publicKey, users[b].publicKey, rand()%(transNum-1)+1); // money go from 1 to maxTrans
+        t.userIn=users+a;
+        t.userOut=users+b;
+        tr.push_back(t);
+    }
+    return tr;
+}
 
-    if(inputType==1) {
-        string in;
-        cout << "Write the input file's name\n";
-        cin >> in;
-        timer t;
-        ifstream fd(in);
-        fd >> noskipws;
-
-        while(fd >> inputLetter) {
-            // to 32 letters
-            chr32 += inputLetter;
-            if(chr32.length()==32) {
-                midHash(chr32, x);
-            }
+std::string merkleRoot(std::vector<transaction> tr) {
+    std::vector<std::string> hashes, prevHashes;
+    int s = tr.size();
+    for(auto it=tr.begin(); it!=tr.end(); it++) prevHashes.push_back((*it).hashID);
+    while(s>1){
+        for(int i=0; i<s; i++) if(i%2==1)
+            hashes.push_back(badHash(prevHashes[i]+prevHashes[i-1]));
+        if(s%2!=0) {
+            hashes.push_back(prevHashes.back());
+            s=s/2+1;
         }
-        t.stop();
-        cout << "Time taken:" << t.duration() << "s\n";
+        else s/=2;
+        prevHashes = hashes;
+        hashes.clear();
     }
-    else if(inputType==0) { // through cmd
-        // cmd version (further fd -> ss)
-        string input;
-        cout << "Write the phrase you want to hash (use only one line)\n";
-        getline(cin, input);
-        getline(cin, input);
-        stringstream ss(input);
-        ss >> noskipws;
+    return(prevHashes.back());
+}
 
-        while(ss >> inputLetter) {
-            // to 32 letters
-            chr32 += inputLetter;
-            if(chr32.length()==32) {
-                midHash(chr32, x);
-            }
+block makeBlock(std::vector<transaction> &transactions){
+    block b;
+    for(int i=0; i<blockSize; i++){
+        auto trLoc = transactions.begin() + rand()%(transactions.size()-1);
+        b.transactions.push_back(*trLoc);
+        b.transPtr.push_back(trLoc);
+        //transactions.erase(trLoc, trLoc+blockSize/10); /// takes every 10 transactions, much faster to erase, though still the biggest time waste of all
+    }
+    b.merkelHash = merkleRoot(b.transactions);
+    return(b);
+}
+
+std::string blockToString(block b, unsigned long long int nonce = -1){
+    if(nonce==-1) nonce=b.nonce;
+    std::string x = std::to_string(b.difficulty)+b.merkelHash+std::to_string(nonce);
+    x += b.previousHash+std::to_string(b.timestamp)+std::to_string(b.version);
+    return(x);
+}
+
+block mineBlock(std::vector<transaction> &tr, user users[], bool &blockMined){
+    block b = makeBlock(tr);
+    std::string zeros; zeros.assign(b.difficulty, '0');
+    for(int i = 0; !blockMined; i++){
+        //std::cout << currThread << std::endl;
+        std::string currHash = badHash(blockToString(b, i));
+        std::string comp = currHash;
+        comp.resize(b.difficulty);
+        //std::cout << comp << " " << zeros << " " << i << std::endl;
+        if(comp == zeros) {
+            // set nonce
+            b.nonce = i;
+            return b;
         }
     }
-    else if(inputType==2){
-        string line, in;
-        cout << "Write the input file's name\n";
-        cin >> in;
-        ifstream fd(in);
+}
 
-        FILE* f;
-        f = fopen("hash.txt", "w");
-
-        int i = 0;
-        while(fd >> line){
-            stringstream ss(line);
-            while(ss >> inputLetter) {
-                // to 32 letters
-                chr32 += inputLetter;
-                if(chr32.length()==32) {
-                    midHash(chr32, x);
-                }
+void addBlock(block b, std::vector<transaction> &transactions, user users[]) {
+    // add the block to the chain
+    b.previousHash = badHash(blockToString(blockchain.back()));
+    blockchain.push_back(b);
+    // execute transactions
+    int trDiff=0;
+    auto it = blockchain.back().transactions.begin();
+    for(int i=0; i<blockchain.back().transactions.size(); i++){
+        std::string all = (*it).inKey + (*it).outKey + std::to_string((*it).sum);
+        if(badHash(all) == (*it).hashID){
+            if((*it).userIn->balance>=(*it).sum){
+                (*it).userIn->balance -= (*it).sum;
+                (*it).userOut->balance += (*it).sum;
             }
-            if(chr32.length() != 0) while(chr32.length() < 32){
-                chr32+='0';
-            }
-            midHash(chr32, x);
-            for(int i=0; i<8; i++) { fprintf(f, "%08x", x[i]); }
-            fprintf(f, "\n");
-            if(i%2==1) { fprintf(f, "\n"); }
-            i++;
-
+            else (*it).isValid = false; //tr.push_back(*it); - instead of just putting it back to transaction list, it just invalidates it
         }
-        fclose(f);
-        return;
+        else (*it).isValid = false;
+        std::iter_swap(blockchain.back().transPtr[i], transactions.end()-trDiff-1);
+        trDiff++;
+        it++;
     }
-        else if(inputType==3){// Same as the last one, except for the while condition, because that's not a pain in the ass to read...
-        string line, in;
-        cout << "Write the input file's name\n";
-        cin >> in;
-        ifstream fd(in);
-
-        FILE* f;
-        f = fopen("hash.txt", "w");
-
-        int i = 0;
-        timer cnt;
-        while(getline(fd, line)){
-            stringstream ss(line);
-            while(ss >> inputLetter) {
-                // to 32 letters
-                chr32 += inputLetter;
-                if(chr32.length()==32) {
-                    midHash(chr32, x);
-                }
-            }
-            if(chr32.length() != 0) while(chr32.length() < 32){
-                chr32+='0';
-            }
-            midHash(chr32, x);
-            for(int i=0; i<8; i++) { fprintf(f, "%08x", x[i]); }
-            fprintf(f, "\n");
-            if(i%2==1) { fprintf(f, "\n"); }
-            i++;
-
-        }
-        cnt.stop();
-        cout << "Time taken: " << cnt.duration() << "s.\n";
-        fclose(f);
-        return;
-    }
-
-    // if input doesn't have 32, fill with 0s
-    if(chr32.length() != 0) while(chr32.length() < 32){
-        chr32+='0';
-    }
-    midHash(chr32, x);
-
-    FILE* f;
-    f = fopen("hash.txt", "w");
-    for(int i=0; i<8; i++) { printf("%08x", x[i]); fprintf(f, "%08x", x[i]); }
-    fclose(f);
-    cout << endl;
+    transactions.erase(transactions.end()-trDiff, transactions.end());
 }
 
 int main()
 {
-    cout << badHash("a") << endl;
-    cout << badHash("a") << endl;
-    cout << badHash("b") << endl;
-    cout << badHash("") << endl;
+    srand(time(NULL));
+    blockchain.push_back(block());
+    user users[userNum];
+    generateUsers(userNum, users);
+    std::vector<transaction> transactions = generateTransactions(transNum, users);
+    double sumsBefore[userNum];
+    for(int i=0; i<userNum; i++) sumsBefore[i]=users[i].balance;
+
+    std::cout << "Thread Nonce Transactions_left\n";
+    while(transactions.size()>blockSize) {
+        // The block mining competition
+        bool blockMined = false;
+        const int threadNum = omp_get_max_threads();
+        block potentialBlocks[threadNum];
+        clock_t timestamp[threadNum]; for(int i=0; i<threadNum; i++) timestamp[i]=std::numeric_limits<clock_t>::max();
+        #pragma omp parallel
+        {
+            int currThread = omp_get_thread_num();
+            potentialBlocks[currThread] = mineBlock(transactions, users, blockMined);
+            if(!blockMined) {
+                timestamp[currThread] = clock();
+                blockMined = true;
+            }
+        }
+        int winnerIndex = std::distance(timestamp, std::min_element(timestamp, timestamp+threadNum));
+        addBlock(potentialBlocks[winnerIndex], transactions, users);
+        std::cout <<std::setw(6)<< winnerIndex <<" "<<std::setw(5)<< blockchain.back().nonce <<" "<< transactions.size() <<std::endl;
+    }
+
+    std::cout << "Every 100th user's balance, before and after:\n";
+    for(int i=0; i<userNum; i+=100) {
+        std::cout << std::setw(6) << sumsBefore[i] << std::setw(6) << users[i].balance << std::endl;
+    }
     return 0;
 }
