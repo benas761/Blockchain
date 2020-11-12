@@ -17,7 +17,6 @@
 - Pridedama bloką į grandinę programa patikrina ar jo transakcijos hashuojasi į tą pat, ką saugo, bei tikrina ar siuntėjas turi pakankamai pinigų įvykdyti transakciją.
 #### Paleidimo instrukcija
 Atidaryti .cbp failą ir per CodeBlocks paleisti programą.
-
 ## v0.1 - Hash function
 #### Maišos funkcijos paaiškinimas:
 
