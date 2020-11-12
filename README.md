@@ -1,3 +1,13 @@
+## v0.3 - Blokų kasimo realizacija
+#### Trumpas veikimo aprašymas
+- Išrenka tiek potencialių kandidatų, kiek kompiuteris turi brandoulių (ang. threads, tai branduolių x2).
+- Kiekvienas kandidatas pasirenka 100 transakcijų, kuriomis bus užpildytas laimėjęs blokas.
+- Pradedamas kasimas:
+  - Kol nėra iškastas blokas, visi kandidatai bando rasti tinkama hash'ą iteruodami nonce kintamajį.
+  - Jei kas nors suranda tinkamo sudėtingumo bloką, kiti kandidatai nustoja kasti ir laimėtojui priskiriamas iškasimo laikas (jei kas nors iškasė tuo pačiu metu, bus išrenkamas branduolys, kuris pirmesnis pagal sąrašą).
+  - Blokas pridedamas į grandinę.
+  - Laimėtojas savo iškastas transakcijas padeda į transakcijų galą.
+  - Perkeltos transakcijos yra ištrinamos (tai smarkiai paspartina programos veikimą lyginant su v0.2 versija)
 ## v0.2 - Blockų grandinė
 +0.1 balo už merkel hash little indian formato skirtumo pamatymą 11-06 paskaitoje.
 #### Trumpas veikimo aprašymas
