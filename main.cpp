@@ -80,6 +80,7 @@ std::string blockToString(block b, unsigned long long int nonce = -1){
 
 block mineBlock(std::vector<transaction> &tr, user users[], bool &blockMined){
     block b = makeBlock(tr);
+    b.previousHash = badHash(blockToString(blockchain.back()));
     std::string zeros; zeros.assign(b.difficulty, '0');
     for(int i = 0; !blockMined; i++){
         //std::cout << currThread << std::endl;
@@ -96,8 +97,6 @@ block mineBlock(std::vector<transaction> &tr, user users[], bool &blockMined){
 }
 
 void addBlock(block b, std::vector<transaction> &transactions, user users[]) {
-    // add the block to the chain
-    b.previousHash = badHash(blockToString(blockchain.back()));
     blockchain.push_back(b);
     // execute transactions
     int trDiff=0;
@@ -147,7 +146,7 @@ int main()
         }
         int winnerIndex = std::distance(timestamp, std::min_element(timestamp, timestamp+threadNum));
         addBlock(potentialBlocks[winnerIndex], transactions, users);
-        std::cout <<std::setw(6)<< winnerIndex <<" "<<std::setw(5)<< blockchain.back().nonce <<" "<< transactions.size() <<std::endl;
+        std::cout <<std::setw(6)<< winnerIndex <<" "<<std::setw(5)<< blockchain.back().nonce <<" "<<transactions.size()<<std::endl;
     }
 
     std::cout << "Every 100th user's balance, before and after:\n";
