@@ -1,0 +1,5 @@
+main: main.cpp merkle.cpp hash.cpp header.h
+	g++ -o main main.cpp $(pkg-config --cflags --libs libbitcoin) -fopenmp
+	
+clean:
+	rm *.o main
