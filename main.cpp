@@ -1,4 +1,5 @@
-//#include "header.h"
+//export PKG_CONFIG_PATH=/home/me/myprefix/lib/pkgconfig
+//g++ -o main main.cpp $(pkg-config --cflags --libs libbitcoin) -fopenmp
 ////////////////////////////////////////////////////////
 #include <bitcoin/bitcoin.hpp>
 #include <iostream>
@@ -149,10 +150,12 @@ bc::hash_digest create_merkle(bc::hash_list& merkle) {
 		// This is the new list.
 		merkle = new_merkle;
 		// DEBUG output ------------------------------------- 
+		/*
 		std::cout <<"Current merkle hash list:"<< std::endl;
 		for(const auto& hash: merkle)
 			std::cout <<"  "<< bc::encode_base16(hash)<< std::endl;
         std::cout << std::endl;
+        */
         // --------------------------------------------------
     }
     // Finally we end up with a single item.
@@ -223,9 +226,15 @@ block makeBlock(std::vector<transaction> &transactions){
         auto trLoc = transactions.begin() + rand()%(transactions.size()-1);
         b.transactions.push_back(*trLoc);
         b.transPtr.push_back(trLoc);
-        //transactions.erase(trLoc, trLoc+blockSize/10); /// takes every 10 transactions, much faster to erase, though still the biggest time waste of all
     }
-    b.merkelHash = merkleRoot(b.transactions);
+    // prepare to create merkle root by hashing all of block's transactions
+    bc::hash_list hlist;
+    for(auto it = b.transactions.begin(); it!=b.transactions.end(); it++) {
+    	char hID[65];
+    	for(int i=0; i<(*it).hashID.length(); i++) hID[i] = (*it).hashID[i];
+		hlist.push_back(bc::hash_literal(hID));
+    }
+    b.merkelHash = bc::encode_base16(create_merkle(hlist));
     return(b);
 }
 
@@ -252,6 +261,7 @@ block mineBlock(std::vector<transaction> &tr, user users[], bool &blockMined){
             return b;
         }
     }
+    return b; // useless, but gets rid of a warning
 }
 
 void addBlock(block b, std::vector<transaction> &transactions, user users[]) {
@@ -313,5 +323,16 @@ int main()
     for(int i=0; i<userNum; i+=100) {
         std::cout << std::setw(8) << sumsBefore[i] << std::setw(8) << users[i].balance << std::endl;
     }
+    /*
+	std::vector<std::string> vint;
+	bc::hash_list hlint;
+	for(int i=0; i<100; i++) vint.push_back(badHash(std::to_string(i)));
+	for(int i=0; i<100; i++) {
+		bc::data_chunk data{'a', 'b', 'c'};
+		data.push_back('d');
+		bc::hash_digest h = bc::bitcoin_hash(data);
+		hlint.push_back(h);
+	}
+	std::cout << bc::encode_base16(hlint[10]) << std::endl << bc::encode_base16(hlint[11]) << std::endl;*/
     return 0;
 }
