@@ -1,3 +1,12 @@
+## v0.3.1 - Merkle funkcijos pakeitimas
+#### Trumpas pakeitimo aprašymas
+- Visi failai integruoti į vieną main.cpp lengvesniam peleidimui
+- Integruota libbitcoin bibliotekos funkcija `create_merkle`
+- `create merkle` funkcija panaudota bloko kūrimo `makeBlock` funkcijoje su `b.merkelHash = bc::encode_base16(create_merkle(hlist));` komanda. `hlist` yra naujai sukurtas `hash_list` tipo kintamasis, atitinkantis turimą transakcijų vektorių.
+#### Paleidimo instrukcija
+- Suinstaliuokite libbitcoin biblioteką
+- Unix sistemose pakeiskite `PKG_CONFIG`_PATH į bibliotekos vietą
+- Paleiskite main.cpp failą su `$(pkg-config --cflags --libs libbitcoin) -fopenmp` argumentais
 ## v0.3 - Blokų kasimo realizacija
 #### Trumpas veikimo aprašymas
 - Išrenka tiek potencialių kandidatų, kiek kompiuteris turi brandoulių (ang. threads, tai branduolių x2).
